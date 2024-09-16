@@ -5,6 +5,10 @@ on:
     - cron: '0 0 * * *'  # Runs daily at midnight
   workflow_dispatch:
 
+permissions:
+  contents: write  # Grants push access
+
+  
 jobs:
   track-stars:
     runs-on: ubuntu-latest
