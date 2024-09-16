@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN rm -rf /root/.cache/pip
 
 WORKDIR /startrack
-ENTRYPOINT ["python", "app.py"]
+ENTRYPOINT ["python", "/startrack/app.py"]
