@@ -1,11 +1,10 @@
 FROM python:3.9-slim
 
-WORKDIR /github/workspace
-
-COPY startrack/ startrack/
-COPY startrack/app.py .
+COPY startrack/ /startrack/
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
+RUN rm -rf /root/.cache/pip
 
+WORKDIR /startrack
 ENTRYPOINT ["python", "app.py"]
