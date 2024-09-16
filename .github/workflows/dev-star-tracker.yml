@@ -19,4 +19,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          organizations: 'roboflow, autodistill'
+          organizations: 'roboflow'
+
+      - name: 📊 Generate Report
+        run: |
+          echo "Generating Report..."
+          cat data.csv
