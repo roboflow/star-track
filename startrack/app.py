@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 import pandas as pd
 
-from startrack.config import GITHUB_TOKEN_ENV
+from startrack.config import GITHUB_TOKEN_ENV, INPUT_ORGANIZATIONS_ENV, INPUT_REPOSITORIES_ENV
 from startrack.core import (
     list_organization_repositories,
     get_repository_data,
@@ -13,13 +13,10 @@ from startrack.core import (
 )
 
 GITHUB_TOKEN = os.environ.get(GITHUB_TOKEN_ENV)
-
-# Read input parameters
-organizations = os.environ.get('INPUT_ORGANIZATIONS', '')
-repositories = os.environ.get('INPUT_REPOSITORIES', '')
-
-organization_names = [org.strip() for org in organizations.split(',') if org.strip()]
-repository_names = [repo.strip() for repo in repositories.split(',') if repo.strip()]
+ORGANIZATIONS = os.environ.get(INPUT_ORGANIZATIONS_ENV, '')
+REPOSITORIES = os.environ.get(INPUT_REPOSITORIES_ENV, '')
+ORGANIZATION_NAMES = [org.strip() for org in ORGANIZATIONS.split(',') if org.strip()]
+REPOSITORY_NAMES = [repo.strip() for repo in REPOSITORIES.split(',') if repo.strip()]
 
 
 def save_to_csv(df: pd.DataFrame, directory: str, filename: str) -> None:
@@ -48,7 +45,7 @@ def get_all_repositories() -> List[RepositoryData]:
     all_repositories = []
 
     # Fetch repositories from specified organizations
-    for organization_name in organization_names:
+    for organization_name in ORGANIZATION_NAMES:
         repos = list_organization_repositories(
             github_token=GITHUB_TOKEN,
             organization_name=organization_name,
@@ -57,7 +54,7 @@ def get_all_repositories() -> List[RepositoryData]:
         all_repositories.extend([RepositoryData.from_json(repo) for repo in repos])
 
     # Fetch specified repositories
-    for repo_full_name in repository_names:
+    for repo_full_name in REPOSITORY_NAMES:
         repo_data = get_repository_data(
             github_token=GITHUB_TOKEN,
             repository_full_name=repo_full_name
@@ -72,7 +69,14 @@ def main() -> None:
     """
     Main function to fetch repository data, update the DataFrame, and save it to a CSV file.
     """
+    if not GITHUB_TOKEN:
+        raise ValueError("GITHUB_TOKEN is not set. Please set the GITHUB_TOKEN environment variable.")
+    if not ORGANIZATION_NAMES and not REPOSITORY_NAMES:
+        raise ValueError("Either ORGANIZATION_NAMES or REPOSITORY_NAMES must be set. Please provide at least one organization name or repository name.")
+
     repositories = get_all_repositories()
+
+    print(repositories)
 
     df = to_dataframe(repositories)
     df = df.set_index('full_name').T
