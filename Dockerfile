@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-WORKDIR /app
+WORKDIR /github/workspace
 
 COPY startrack/ startrack/
 COPY startrack/app.py .
