@@ -1,10 +1,6 @@
 name: 'Star Tracker'
 description: 'Track star counts for specified GitHub repositories and organizations.'
 inputs:
-  github_token:
-    description: 'GitHub Token'
-    required: true
-    default: '${{ github.token }}'
   organizations:
     description: 'Comma-separated list of organization names'
     required: false
