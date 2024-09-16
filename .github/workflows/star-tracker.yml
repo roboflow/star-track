@@ -1,0 +1,26 @@
+name: Star Tracker
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+  workflow_dispatch:
+
+jobs:
+  track-stars:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Track Stars
+        uses: your-username/startrack@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          organizations: 'roboflow, autodistill'
+
+      - name: Commit Data
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Update star data
+          file_pattern: data/data.csv

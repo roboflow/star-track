@@ -105,3 +105,19 @@ def to_dataframe(repositories: List[RepositoryData]) -> pd.DataFrame:
         in repositories
     ]
     return pd.DataFrame(data)
+
+
+def get_repository_data(
+    github_token: str,
+    repository_full_name: str
+) -> Dict[str, Any]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}",
+    }
+    url = f"https://api.github.com/repos/{repository_full_name}"
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
