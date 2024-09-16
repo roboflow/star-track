@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import List
 import pandas as pd
 
-from startrack.config import GITHUB_TOKEN_ENV, INPUT_ORGANIZATIONS_ENV, INPUT_REPOSITORIES_ENV
-from startrack.core import (
+from config import GITHUB_TOKEN_ENV, INPUT_ORGANIZATIONS_ENV, INPUT_REPOSITORIES_ENV
+from core import (
     list_organization_repositories,
     get_repository_data,
     RepositoryType,
