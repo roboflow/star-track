@@ -9,7 +9,7 @@ Star-Track is a user-friendly utility for tracking GitHub repository statistics.
 - clone repositoryą
 
     ```bash
-    git clone https://github.com/SkalskiP/star-track.git
+    git clone https://github.com/roboflow/star-track.git
     ```
   
 - setup python environment and activate it [optional]
