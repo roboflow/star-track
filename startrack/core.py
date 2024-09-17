@@ -22,6 +22,15 @@ class RepositoryData:
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> 'RepositoryData':
+        """
+        Create a RepositoryData instance from a JSON dictionary.
+
+        Args:
+            data (Dict[str, Any]): A dictionary containing repository data.
+
+        Returns:
+            RepositoryData: An instance of RepositoryData.
+        """
         full_name = data['full_name']
         star_count = data['stargazers_count']
         fork_count = data['forks_count']
@@ -49,7 +58,40 @@ class RepositoryType(Enum):
     MEMBER = "member"
 
 
-def list_organization_repositories(
+def fetch_all_organization_repositories(
+    github_token: str,
+    organization_name: str,
+    repository_type: RepositoryType
+) -> List:
+    """
+    Fetch all repositories of a specified organization.
+
+    Args:
+        github_token (str): The GitHub personal access token for authentication.
+        organization_name (str): The name of the GitHub organization whose repositories
+            are to be fetched.
+        repository_type (RepositoryType): The type of repositories to fetch.
+
+    Returns:
+        List: A list of repositories.
+    """
+    all_repositories = []
+    page = 1
+    while True:
+        repos = fetch_organization_repositories_by_page(
+            github_token=github_token,
+            organization_name=organization_name,
+            repository_type=repository_type,
+            page=page)
+        if not repos:
+            break
+        all_repositories.extend(repos)
+        page += 1
+
+    return all_repositories
+
+
+def fetch_organization_repositories_by_page(
     github_token: str,
     organization_name: str,
     repository_type: RepositoryType = RepositoryType.ALL,
@@ -88,7 +130,7 @@ def list_organization_repositories(
     return response.json()
 
 
-def to_dataframe(repositories: List[RepositoryData]) -> pd.DataFrame:
+def convert_repositories_to_dataframe(repositories: List[RepositoryData]) -> pd.DataFrame:
     """
     Convert a list of RepositoryData objects into a pandas DataFrame.
 
@@ -107,10 +149,21 @@ def to_dataframe(repositories: List[RepositoryData]) -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
-def get_repository_data(
+def fetch_repository_data_by_full_name(
     github_token: str,
     repository_full_name: str
 ) -> Dict[str, Any]:
+    """
+    Fetch data for a specific repository by its full name.
+
+    Args:
+        github_token (str): The GitHub personal access token for authentication.
+        repository_full_name (str): The full name of the repository.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing repository data if the request is
+            successful, otherwise None.
+    """
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_token}",

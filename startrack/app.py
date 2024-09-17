@@ -1,15 +1,15 @@
 import os
 from datetime import datetime
 from typing import List
+
 import pandas as pd
 
-from config import GITHUB_TOKEN_ENV, INPUT_ORGANIZATIONS_ENV, INPUT_REPOSITORIES_ENV
-from core import (
-    list_organization_repositories,
-    get_repository_data,
+from startrack.config import GITHUB_TOKEN_ENV, INPUT_ORGANIZATIONS_ENV, \
+    INPUT_REPOSITORIES_ENV
+from startrack.core import (
     RepositoryType,
-    RepositoryData,
-    to_dataframe
+    RepositoryData, fetch_all_organization_repositories,
+    fetch_repository_data_by_full_name, convert_repositories_to_dataframe
 )
 
 GITHUB_TOKEN = os.environ.get(GITHUB_TOKEN_ENV)
@@ -46,7 +46,7 @@ def get_all_repositories() -> List[RepositoryData]:
 
     # Fetch repositories from specified organizations
     for organization_name in ORGANIZATION_NAMES:
-        repos = list_organization_repositories(
+        repos = fetch_all_organization_repositories(
             github_token=GITHUB_TOKEN,
             organization_name=organization_name,
             repository_type=RepositoryType.PUBLIC
@@ -55,7 +55,7 @@ def get_all_repositories() -> List[RepositoryData]:
 
     # Fetch specified repositories
     for repo_full_name in REPOSITORY_NAMES:
-        repo_data = get_repository_data(
+        repo_data = fetch_repository_data_by_full_name(
             github_token=GITHUB_TOKEN,
             repository_full_name=repo_full_name
         )
@@ -67,18 +67,23 @@ def get_all_repositories() -> List[RepositoryData]:
 
 def main() -> None:
     """
-    Main function to fetch repository data, update the DataFrame, and save it to a CSV file.
+    Main function to fetch repository data, update the DataFrame, and save it to a CSV
+    file.
     """
     if not GITHUB_TOKEN:
-        raise ValueError("GITHUB_TOKEN is not set. Please set the GITHUB_TOKEN environment variable.")
+        raise ValueError(
+            "`GITHUB_TOKEN` is not set. Please set the `GITHUB_TOKEN` environment "
+            "variable."
+        )
     if not ORGANIZATION_NAMES and not REPOSITORY_NAMES:
-        raise ValueError("Either ORGANIZATION_NAMES or REPOSITORY_NAMES must be set. Please provide at least one organization name or repository name.")
+        raise ValueError(
+            "Either `ORGANIZATION_NAMES` or `REPOSITORY_NAMES` must be set. Please "
+            "provide at least one organization name or repository name."
+        )
 
     repositories = get_all_repositories()
 
-    print(repositories)
-
-    df = to_dataframe(repositories)
+    df = convert_repositories_to_dataframe(repositories)
     df = df.set_index('full_name').T
 
     current_date = datetime.now().strftime("%Y-%m-%d")
@@ -95,6 +100,7 @@ def main() -> None:
         directory='data',
         filename='data.csv'
     )
+
 
 if __name__ == "__main__":
     main()
