@@ -8,6 +8,4 @@ RUN rm -rf /root/.cache/pip
 
 WORKDIR /
 ENV PYTHONPATH="/startrack"
-RUN pwd && ls -la /
-
 ENTRYPOINT ["python","-m","startrack.app"]
