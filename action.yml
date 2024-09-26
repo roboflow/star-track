@@ -11,5 +11,5 @@ runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
-    - ${{ inputs.organizations }}  
+    - ${{ inputs.organizations }}
     - ${{ inputs.repositories }}

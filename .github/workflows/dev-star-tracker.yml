@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - '**'
   workflow_dispatch:
 
 jobs:
@@ -19,4 +22,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          organizations: 'roboflow, autodistill'
+          organizations: 'roboflow, autodistill, voxel51'
+
+      - name: 📊 Show data.csv
+        run: |
+          cat data/data.csv
