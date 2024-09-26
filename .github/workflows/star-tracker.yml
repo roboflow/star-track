@@ -8,7 +8,7 @@ on:
 permissions:
   contents: write  # Grants push access
 
-  
+
 jobs:
   track-stars:
     runs-on: ubuntu-latest
@@ -22,7 +22,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          organizations: 'roboflow, autodistill'
+          organizations: 'roboflow, autodistill, huggingface, voxel51, ultralytics, Lightning-AI'
 
       - name: Commit Data
         uses: stefanzweifel/git-auto-commit-action@v4

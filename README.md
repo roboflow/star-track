@@ -2,28 +2,28 @@
 
 ## 👋 hello
 
-Star-Track is a user-friendly utility for tracking GitHub repository statistics. 
+Star-Track is a user-friendly utility for tracking GitHub repository statistics.
 
 ## 💻 install
 
 - clone repositoryą
 
-    ```bash
-    git clone https://github.com/roboflow/star-track.git
-    ```
-  
-- setup python environment and activate it [optional]
+  ```bash
+  git clone https://github.com/roboflow/star-track.git
+  ```
 
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
+- setup python environment and activate it \[optional\]
+
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
 
 - install required dependencies
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 ## ⚙️ execute
 
@@ -37,22 +37,22 @@ To test the Docker solution locally, follow these steps:
 
 1. **Build the Docker Image**
 
-    ```bash
-    docker build -t startrack:latest .
-    ```
+   ```bash
+   docker build -t startrack:latest .
+   ```
 
 2. **Run the Docker Container**
 
-    ```bash
-    docker run --rm \
-      -e GITHUB_TOKEN=your_github_token \
-      -e INPUT_ORGANIZATIONS=org1,org2 \
-      -e INPUT_REPOSITORIES=user1/repo1,user2/repo2 \
-      -v $(pwd)/data:/app/data \
-      startrack:latest
-    ```
+   ```bash
+   docker run --rm \
+     -e GITHUB_TOKEN=your_github_token \
+     -e INPUT_ORGANIZATIONS=org1,org2 \
+     -e INPUT_REPOSITORIES=user1/repo1,user2/repo2 \
+     -v $(pwd)/data:/app/data:z \
+     startrack:latest
+   ```
 
-### Explanation:
+### Explanation
 
 - `--rm`: Automatically remove the container when it exits.
 - `-e GITHUB_TOKEN=your_github_token`: Set the `GITHUB_TOKEN` environment variable.
