@@ -17,18 +17,13 @@ jobs:
       - name: 🛠️ Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🌠 Track Stars and Downloads
+      - name: 🌠 Track Stars
         uses: ./
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           organizations: 'roboflow, autodistill, voxel51'
-          pypi_packages: 'rf100vl,rfdetr,rfdetr-plus,roboflow,supervision,trackers,ultralytics,inference,inference-gpu,inference-sdk,inference-cli,inference-core,inference-cpu,inference-models'
 
-      - name: 📊 Show GitHub stars data
+      - name: 📊 Show data.csv
         run: |
-          cat data/github_data.csv
-
-      - name: 📦 Show PyPI downloads data
-        run: |
-          cat data/pypi_data.csv
+          cat data/data.csv

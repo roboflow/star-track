@@ -17,16 +17,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Track Stars and Downloads
+      - name: Track Stars
         uses: roboflow/star-track@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           organizations: 'roboflow, autodistill, huggingface, voxel51, ultralytics, Lightning-AI'
-          pypi_packages: 'rf100vl,rfdetr,rfdetr-plus,roboflow,supervision,trackers,ultralytics,inference,inference-gpu,inference-sdk,inference-cli,inference-core,inference-cpu,inference-models'
 
       - name: Commit Data
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: Update tracking data
-          file_pattern: 'data/*.csv'
+          commit_message: Update star data
+          file_pattern: data/data.csv
