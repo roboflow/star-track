@@ -1,3 +1,5 @@
+import logging
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -6,6 +8,8 @@ import pandas as pd
 import requests
 
 from startrack.config import HTTP_REQUEST_TIMEOUT
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -78,19 +82,39 @@ def fetch_all_organization_repositories(
     page = 1
     with requests.Session() as session:
         while True:
-            repos = fetch_organization_repositories_by_page(
-                session=session,
-                github_token=github_token,
-                organization_name=organization_name,
-                repository_type=repository_type,
-                page=page,
-            )
-            if not repos:
+            try:
+                repos = fetch_organization_repositories_by_page(
+                    session=session,
+                    github_token=github_token,
+                    organization_name=organization_name,
+                    repository_type=repository_type,
+                    page=page,
+                )
+                if not repos:
+                    break
+                all_repositories.extend(repos)
+                page += 1
+            except requests.HTTPError as e:
+                logger.error(
+                    f"Failed to fetch page {page} for {organization_name}: {e}"
+                )
                 break
-            all_repositories.extend(repos)
-            page += 1
 
     return all_repositories
+
+
+def handle_rate_limit(response: requests.Response) -> None:
+    """Handle GitHub API rate limiting by waiting if necessary.
+
+    Args:
+        response: The response object from a GitHub API request.
+    """
+    remaining = response.headers.get("X-RateLimit-Remaining")
+    if remaining is not None and int(remaining) == 0:
+        reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+        sleep_time = max(reset_time - time.time(), 0) + 1
+        logger.warning(f"Rate limit exceeded. Sleeping for {sleep_time:.0f} seconds.")
+        time.sleep(sleep_time)
 
 
 def fetch_organization_repositories_by_page(
@@ -113,6 +137,9 @@ def fetch_organization_repositories_by_page(
 
     Returns:
         List: A list containing details of the organization's repositories.
+
+    Raises:
+        requests.HTTPError: If the API request fails.
     """
     headers = {
         "Accept-Encoding": "gzip",
@@ -131,6 +158,16 @@ def fetch_organization_repositories_by_page(
     response = session.get(
         url, headers=headers, params=params, timeout=HTTP_REQUEST_TIMEOUT
     )
+
+    handle_rate_limit(response)
+
+    if response.status_code != requests.codes.OK:
+        logger.error(
+            f"Failed to fetch repositories for {organization_name}: "
+            f"{response.status_code} - {response.text}"
+        )
+        response.raise_for_status()
+
     return response.json()
 
 
@@ -156,7 +193,7 @@ def convert_repositories_to_dataframe(
 def fetch_repository_data_by_full_name(
     github_token: str,
     repository_full_name: str,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     """Fetch data for a specific repository by its full name.
 
     Args:
@@ -173,7 +210,19 @@ def fetch_repository_data_by_full_name(
         "Authorization": f"Bearer {github_token}",
     }
     url = f"https://api.github.com/repos/{repository_full_name}"
-    response = requests.get(url, headers=headers, timeout=HTTP_REQUEST_TIMEOUT)
-    if response.status_code == requests.codes.OK:
-        return response.json()
-    return None
+
+    try:
+        response = requests.get(url, headers=headers, timeout=HTTP_REQUEST_TIMEOUT)
+        handle_rate_limit(response)
+
+        if response.status_code == requests.codes.OK:
+            return response.json()
+
+        logger.warning(
+            f"Failed to fetch repository {repository_full_name}: "
+            f"{response.status_code} - {response.text}"
+        )
+        return None
+    except requests.RequestException as e:
+        logger.error(f"Request error fetching {repository_full_name}: {e}")
+        return None
