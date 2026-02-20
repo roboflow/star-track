@@ -103,18 +103,32 @@ def fetch_all_organization_repositories(
     return all_repositories
 
 
-def handle_rate_limit(response: requests.Response) -> None:
+def handle_rate_limit(response: requests.Response) -> bool:
     """Handle GitHub API rate limiting by waiting if necessary.
 
     Args:
         response: The response object from a GitHub API request.
+
+    Returns:
+        bool: True if rate limited and waited, False otherwise.
     """
+    if response.status_code == 403:
+        reset_time = response.headers.get("X-RateLimit-Reset")
+        if reset_time:
+            sleep_time = max(int(reset_time) - time.time(), 0) + 1
+            logger.warning(f"Rate limit exceeded (403). Sleeping for {sleep_time:.0f} seconds.")
+            time.sleep(sleep_time)
+            return True
+
     remaining = response.headers.get("X-RateLimit-Remaining")
     if remaining is not None and int(remaining) == 0:
         reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
         sleep_time = max(reset_time - time.time(), 0) + 1
-        logger.warning(f"Rate limit exceeded. Sleeping for {sleep_time:.0f} seconds.")
+        logger.warning(f"Rate limit exhausted. Sleeping for {sleep_time:.0f} seconds.")
         time.sleep(sleep_time)
+        return True
+
+    return False
 
 
 def fetch_organization_repositories_by_page(
@@ -123,6 +137,7 @@ def fetch_organization_repositories_by_page(
     organization_name: str,
     repository_type: RepositoryType = RepositoryType.ALL,
     page: int = 1,
+    max_retries: int = 3,
 ) -> list:
     """Lists the repositories of a specified GitHub organization based on the repository
     type and page number.
@@ -134,12 +149,13 @@ def fetch_organization_repositories_by_page(
         repository_type (RepositoryType): The type of repositories to list. Defaults to
             RepositoryType.ALL.
         page (int): The page number of the results to fetch. Defaults to 1.
+        max_retries (int): Maximum number of retries for rate-limited requests.
 
     Returns:
         List: A list containing details of the organization's repositories.
 
     Raises:
-        requests.HTTPError: If the API request fails.
+        requests.HTTPError: If the API request fails after retries.
     """
     headers = {
         "Accept-Encoding": "gzip",
@@ -151,24 +167,32 @@ def fetch_organization_repositories_by_page(
     params = {
         "type": repository_type.value,
         "page": page,
+        "per_page": 100,
     }
 
     url = f"https://api.github.com/orgs/{organization_name}/repos"
 
-    response = session.get(
-        url, headers=headers, params=params, timeout=HTTP_REQUEST_TIMEOUT
-    )
+    for attempt in range(max_retries):
+        response = session.get(
+            url, headers=headers, params=params, timeout=HTTP_REQUEST_TIMEOUT
+        )
 
-    handle_rate_limit(response)
+        if response.status_code == requests.codes.OK:
+            handle_rate_limit(response)
+            return response.json()
 
-    if response.status_code != requests.codes.OK:
+        if handle_rate_limit(response):
+            logger.info(f"Retrying request for {organization_name} (attempt {attempt + 2})")
+            continue
+
         logger.error(
             f"Failed to fetch repositories for {organization_name}: "
             f"{response.status_code} - {response.text}"
         )
         response.raise_for_status()
 
-    return response.json()
+    logger.error(f"Max retries exceeded for {organization_name}")
+    return []
 
 
 def convert_repositories_to_dataframe(
@@ -193,12 +217,14 @@ def convert_repositories_to_dataframe(
 def fetch_repository_data_by_full_name(
     github_token: str,
     repository_full_name: str,
+    max_retries: int = 3,
 ) -> dict[str, Any] | None:
     """Fetch data for a specific repository by its full name.
 
     Args:
         github_token (str): The GitHub personal access token for authentication.
         repository_full_name (str): The full name of the repository.
+        max_retries (int): Maximum number of retries for rate-limited requests.
 
     Returns:
         Dict[str, Any]: A dictionary containing repository data if the request is
@@ -211,18 +237,28 @@ def fetch_repository_data_by_full_name(
     }
     url = f"https://api.github.com/repos/{repository_full_name}"
 
-    try:
-        response = requests.get(url, headers=headers, timeout=HTTP_REQUEST_TIMEOUT)
-        handle_rate_limit(response)
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers, timeout=HTTP_REQUEST_TIMEOUT)
 
-        if response.status_code == requests.codes.OK:
-            return response.json()
+            if response.status_code == requests.codes.OK:
+                handle_rate_limit(response)
+                return response.json()
 
-        logger.warning(
-            f"Failed to fetch repository {repository_full_name}: "
-            f"{response.status_code} - {response.text}"
-        )
-        return None
-    except requests.RequestException as e:
-        logger.error(f"Request error fetching {repository_full_name}: {e}")
-        return None
+            if handle_rate_limit(response):
+                logger.info(f"Retrying {repository_full_name} (attempt {attempt + 2})")
+                continue
+
+            logger.warning(
+                f"Failed to fetch repository {repository_full_name}: "
+                f"{response.status_code} - {response.text}"
+            )
+            return None
+        except requests.RequestException as e:
+            logger.error(f"Request error fetching {repository_full_name}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+                continue
+            return None
+
+    return None

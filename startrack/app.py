@@ -82,25 +82,41 @@ def get_all_repositories() -> list[RepositoryData]:
         List[RepositoryData]: A list of repository data objects.
     """
     all_repositories = []
+    failed_orgs = []
+    failed_repos = []
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        organization_futures = [
-            executor.submit(fetch_organization_repositories, org_name)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        organization_futures = {
+            executor.submit(fetch_organization_repositories, org_name): org_name
             for org_name in ORGANIZATION_NAMES
-        ]
+        }
 
-        repository_futures = [
-            executor.submit(fetch_individual_repository, repo_name)
+        repository_futures = {
+            executor.submit(fetch_individual_repository, repo_name): repo_name
             for repo_name in REPOSITORY_NAMES
-        ]
+        }
 
         for future in concurrent.futures.as_completed(organization_futures):
-            all_repositories.extend(future.result())
+            org_name = organization_futures[future]
+            try:
+                repos = future.result()
+                all_repositories.extend(repos)
+            except Exception as e:
+                failed_orgs.append(org_name)
+                print(f"ERROR: Failed to fetch org '{org_name}': {e}")
 
         for future in concurrent.futures.as_completed(repository_futures):
-            repo_data = future.result()
-            if repo_data:
-                all_repositories.append(repo_data)
+            repo_name = repository_futures[future]
+            try:
+                repo_data = future.result()
+                if repo_data:
+                    all_repositories.append(repo_data)
+            except Exception as e:
+                failed_repos.append(repo_name)
+                print(f"ERROR: Failed to fetch repo '{repo_name}': {e}")
+
+    if failed_orgs or failed_repos:
+        print(f"WARNING: Failed to fetch {len(failed_orgs)} orgs and {len(failed_repos)} repos")
 
     return all_repositories
 
@@ -149,6 +165,8 @@ def main() -> None:
         file_path = Path(OUTPUT_PATH) / OUTPUT_FILENAME
         if file_path.exists():
             existing_df = pd.read_csv(file_path, index_col=0)
+            if current_date in existing_df.index:
+                existing_df = existing_df.drop(current_date)
             df = pd.concat([existing_df, df])
 
         save_to_csv(df=df, directory=OUTPUT_PATH, filename=OUTPUT_FILENAME)
@@ -165,6 +183,8 @@ def main() -> None:
             file_path = Path(OUTPUT_PATH) / PYPI_OUTPUT_FILENAME
             if file_path.exists():
                 existing_df = pd.read_csv(file_path, index_col=0)
+                if current_date in existing_df.index:
+                    existing_df = existing_df.drop(current_date)
                 df = pd.concat([existing_df, df])
 
             save_to_csv(df=df, directory=OUTPUT_PATH, filename=PYPI_OUTPUT_FILENAME)
