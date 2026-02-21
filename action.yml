@@ -1,15 +1,15 @@
 name: 'Star Tracker'
-description: 'Track star counts for specified GitHub repositories and organizations.'
+description: 'Track GitHub stars and PyPI downloads for specified repositories.'
 inputs:
   organizations:
-    description: 'Comma-separated list of organization names'
+    description: 'Comma-separated list of GitHub organization names'
     required: false
   repositories:
     description: 'Comma-separated list of repository full names (owner/repo)'
     required: false
+  pypi_packages:
+    description: 'Comma-separated list of PyPI package names to track downloads'
+    required: false
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:
-    - ${{ inputs.organizations }}
-    - ${{ inputs.repositories }}
