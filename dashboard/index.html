@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Track Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-title">
+                <h1>Star Track</h1>
+                <span class="last-update" id="lastUpdateIndicator"></span>
+            </div>
+            <div class="header-controls">
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="7">7D</button>
+                    <button class="period-btn" data-period="30">30D</button>
+                    <button class="period-btn" data-period="90">90D</button>
+                </div>
+                <button class="btn-secondary" id="generateReport">Generate Report</button>
+                <button class="btn-icon" id="toggleTheme" title="Toggle dark mode">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" id="themeIcon">
+                        <path d="M8 12a4 4 0 100-8 4 4 0 000 8zM8 0v2M8 14v2M0 8h2M14 8h2M2.34 2.34l1.42 1.42M12.24 12.24l1.42 1.42M2.34 13.66l1.42-1.42M12.24 3.76l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="main">
+            <section class="summary-cards">
+                <div class="card summary-card">
+                    <span class="card-label">Total Stars</span>
+                    <span class="card-value" id="totalStars">—</span>
+                    <span class="card-sublabel" id="totalStarsChange">—</span>
+                </div>
+                <div class="card summary-card">
+                    <span class="card-label">Total Downloads</span>
+                    <span class="card-value" id="totalDownloads">—</span>
+                    <span class="card-sublabel" id="totalDownloadsChange">—</span>
+                </div>
+                <div class="card summary-card">
+                    <span class="card-label">Top Grower <span class="period-label" id="periodLabel">(30D)</span></span>
+                    <span class="card-value" id="topGrower">—</span>
+                    <span class="card-change positive" id="topGrowerChange">—</span>
+                </div>
+            </section>
+
+            <section class="dashboard-grid">
+                <div class="card table-card">
+                    <div class="card-header">
+                        <h2>GitHub Stars</h2>
+                        <button class="btn-icon" id="filterStars" title="Filter">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="starsTable">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Repository <span class="sort-indicator"></span></th>
+                                    <th class="num" data-sort="current">Stars <span class="sort-indicator"></span></th>
+                                    <th class="num" data-sort="change">Change <span class="sort-indicator"></span></th>
+                                    <th class="num" data-sort="percent">% <span class="sort-indicator"></span></th>
+                                    <th data-sort="streak" title="Growth streak indicator">Trend <span class="sort-indicator"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="card-header">
+                        <h2>PyPI Downloads</h2>
+                        <button class="btn-icon" id="filterDownloads" title="Filter">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="downloadsTable">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Package <span class="sort-indicator"></span></th>
+                                    <th class="num" data-sort="current">Downloads <span class="sort-indicator"></span></th>
+                                    <th class="num" data-sort="change">Change <span class="sort-indicator"></span></th>
+                                    <th class="num" data-sort="percent">% <span class="sort-indicator"></span></th>
+                                    <th data-sort="streak" title="Growth streak indicator">Trend <span class="sort-indicator"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="charts-section">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <div class="chart-title-group">
+                            <h2>Trends</h2>
+                            <span class="chart-subtitle" id="chartTitle">Top 5 by stars gained</span>
+                        </div>
+                        <div class="chart-header-row">
+                            <div class="chart-controls">
+                                <select id="chartMetric">
+                                    <option value="stars">GitHub Stars</option>
+                                    <option value="downloads">PyPI Downloads</option>
+                                </select>
+                                <select id="chartPeriod">
+                                    <option value="7">Last 7 days</option>
+                                    <option value="30" selected>Last 30 days</option>
+                                    <option value="90">Last 90 days</option>
+                                    <option value="0">All time</option>
+                                </select>
+                                <button class="btn-secondary btn-sm" id="selectChartItems">Select Items</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-legend-container" id="chartLegend"></div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section class="raw-data-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Raw Data</h2>
+                        <div class="chart-controls">
+                            <select id="rawDataType">
+                                <option value="stars">GitHub Stars</option>
+                                <option value="downloads">PyPI Downloads</option>
+                            </select>
+                            <button class="btn-secondary btn-sm" id="selectRawColumns">Select Columns</button>
+                        </div>
+                    </div>
+                    <div class="raw-data-container" id="rawDataContainer">
+                        <table class="data-table raw-table" id="rawDataTable">
+                            <thead id="rawDataHead"></thead>
+                            <tbody id="rawDataBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="modal" id="reportModal">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <h2>Generated Report</h2>
+                    <button class="btn-icon modal-close" id="closeModal">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="report-controls">
+                        <select id="reportPeriod">
+                            <option value="weekly">Weekly Report</option>
+                            <option value="monthly">Monthly Report</option>
+                        </select>
+                        <button class="btn-primary" id="copyReport">Copy to Clipboard</button>
+                    </div>
+                    <pre class="report-output" id="reportOutput"></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="filterModal">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <h2 id="filterModalTitle">Filter Items</h2>
+                    <button class="btn-icon modal-close">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="filter-toolbar">
+                        <button class="btn-secondary" id="selectAll">Select All</button>
+                        <button class="btn-secondary" id="selectNone">Select None</button>
+                        <div id="orgButtons"></div>
+                    </div>
+                    <div class="filter-list" id="filterList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="chartItemsModal">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <h2>Select Chart Items</h2>
+                    <button class="btn-icon modal-close">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-hint">Select up to 6 items to display on the chart</p>
+                    <div class="filter-toolbar">
+                        <button class="btn-secondary" id="chartItemsReset">Reset to Top 5</button>
+                    </div>
+                    <div class="filter-list" id="chartItemsList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" id="applyChartItems">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="rawColumnsModal">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content card">
+                <div class="modal-header">
+                    <h2>Select Columns</h2>
+                    <button class="btn-icon modal-close">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-hint">Select columns to display in the raw data table</p>
+                    <div class="filter-toolbar">
+                        <button class="btn-secondary" id="rawSelectAll">Select All</button>
+                        <button class="btn-secondary" id="rawSelectNone">Select None</button>
+                    </div>
+                    <div class="filter-list" id="rawColumnsList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-primary" id="applyRawColumns">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/report.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
