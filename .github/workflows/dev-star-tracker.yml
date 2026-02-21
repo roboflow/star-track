@@ -22,7 +22,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          organizations: 'roboflow, autodistill, voxel51'
+          organizations: 'roboflow, autodistill, huggingface, voxel51, ultralytics, Lightning-AI'
           pypi_packages: 'rf100vl,rfdetr,rfdetr-plus,roboflow,supervision,trackers,ultralytics,inference,inference-gpu,inference-sdk,inference-cli,inference-core,inference-cpu,inference-models'
 
       - name: 📊 Show GitHub stars data
