@@ -1,3 +1,103 @@
+const Preferences = {
+    KEY: 'star-track-prefs',
+    VERSION: 1,
+
+    load() {
+        try {
+            const saved = localStorage.getItem(this.KEY);
+            if (!saved) return null;
+            const prefs = JSON.parse(saved);
+            if (prefs.version !== this.VERSION) return null;
+            return prefs;
+        } catch (e) {
+            console.warn('Failed to load preferences:', e);
+            return null;
+        }
+    },
+
+    save() {
+        try {
+            const prefs = {
+                version: this.VERSION,
+                period: App.currentPeriod,
+                selectedGithub: [...DataStore.selectedGithub],
+                selectedPypi: [...DataStore.selectedPypi],
+                chartPeriod: Charts.chartPeriod,
+                chartGranularity: Charts.chartGranularity,
+                chartSelectedItems: Charts.selectedItems,
+                rawDataType: document.getElementById('rawDataType')?.value || 'stars',
+                selectedRawGithub: [...DataStore.selectedRawGithub],
+                selectedRawPypi: [...DataStore.selectedRawPypi]
+            };
+            localStorage.setItem(this.KEY, JSON.stringify(prefs));
+        } catch (e) {
+            console.warn('Failed to save preferences:', e);
+        }
+    },
+
+    apply(prefs) {
+        if (!prefs) return;
+
+        if (prefs.period) {
+            App.currentPeriod = prefs.period;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.period) === prefs.period);
+            });
+        }
+
+        if (prefs.selectedGithub?.length) {
+            const valid = prefs.selectedGithub.filter(col => DataStore.githubColumns.includes(col));
+            if (valid.length) {
+                DataStore.selectedGithub = new Set(valid);
+            }
+        }
+
+        if (prefs.selectedPypi?.length) {
+            const valid = prefs.selectedPypi.filter(col => DataStore.pypiColumns.includes(col));
+            if (valid.length) {
+                DataStore.selectedPypi = new Set(valid);
+            }
+        }
+
+        if (prefs.chartPeriod !== undefined) {
+            Charts.chartPeriod = prefs.chartPeriod;
+            const chartPeriodEl = document.getElementById('chartPeriod');
+            if (chartPeriodEl) chartPeriodEl.value = prefs.chartPeriod;
+        }
+
+        if (prefs.chartGranularity) {
+            Charts.chartGranularity = prefs.chartGranularity;
+            const chartGranEl = document.getElementById('chartGranularity');
+            if (chartGranEl) chartGranEl.value = prefs.chartGranularity;
+        }
+
+        if (prefs.chartSelectedItems?.length) {
+            const valid = prefs.chartSelectedItems.filter(col => DataStore.githubColumns.includes(col));
+            Charts.selectedItems = valid;
+            App.chartSelectedItems = valid;
+        }
+
+        if (prefs.rawDataType) {
+            const rawTypeEl = document.getElementById('rawDataType');
+            if (rawTypeEl) rawTypeEl.value = prefs.rawDataType;
+        }
+
+        if (prefs.selectedRawGithub?.length) {
+            const valid = prefs.selectedRawGithub.filter(col => DataStore.githubColumns.includes(col));
+            if (valid.length) {
+                DataStore.selectedRawGithub = new Set(valid);
+            }
+        }
+
+        if (prefs.selectedRawPypi?.length) {
+            const valid = prefs.selectedRawPypi.filter(col => DataStore.pypiColumns.includes(col));
+            if (valid.length) {
+                DataStore.selectedRawPypi = new Set(valid);
+            }
+        }
+    }
+};
+
 const App = {
     currentPeriod: 30,
     currentFilterType: null,
@@ -15,10 +115,15 @@ const App = {
         }
 
         this.loadTheme();
+        const prefs = Preferences.load();
+        Preferences.apply(prefs);
+        
         Charts.init();
         this.setupEventListeners();
         this.render();
-        this.renderRawData();
+        
+        const rawType = prefs?.rawDataType || 'stars';
+        this.renderRawData(rawType);
     },
 
     loadTheme() {
@@ -54,6 +159,7 @@ const App = {
                 e.target.classList.add('active');
                 this.currentPeriod = parseInt(e.target.dataset.period);
                 this.render();
+                Preferences.save();
             });
         });
 
@@ -121,11 +227,13 @@ const App = {
         document.getElementById('chartPeriod').addEventListener('change', (e) => {
             Charts.setChartPeriod(parseInt(e.target.value));
             Charts.updateTrendChart('stars', this.currentPeriod);
+            Preferences.save();
         });
 
         document.getElementById('chartGranularity').addEventListener('change', (e) => {
             Charts.setChartGranularity(e.target.value);
             Charts.updateTrendChart('stars', this.currentPeriod);
+            Preferences.save();
         });
 
         document.getElementById('selectChartItems').addEventListener('click', () => {
@@ -143,10 +251,12 @@ const App = {
             Charts.updateTrendChart('stars', this.currentPeriod, 
                 this.chartSelectedItems.length > 0 ? this.chartSelectedItems : null);
             this.hideModal('chartItemsModal');
+            Preferences.save();
         });
 
         document.getElementById('rawDataType').addEventListener('change', (e) => {
             this.renderRawData(e.target.value);
+            Preferences.save();
         });
 
         document.getElementById('selectRawColumns').addEventListener('click', () => {
@@ -389,6 +499,7 @@ const App = {
                     selected.delete(col);
                 }
                 this.render();
+                Preferences.save();
             });
             filterList.appendChild(item);
         }
@@ -412,6 +523,7 @@ const App = {
         });
 
         this.render();
+        Preferences.save();
     },
 
     selectAllFilters(selectAll) {
@@ -431,6 +543,7 @@ const App = {
         });
 
         this.render();
+        Preferences.save();
     },
 
     hideModal(modalId) {
@@ -557,6 +670,7 @@ const App = {
         DataStore.setSelectedRaw(type, selected);
         this.renderRawData(type);
         this.hideModal('rawColumnsModal');
+        Preferences.save();
     }
 };
 
