@@ -138,19 +138,23 @@ const DataStore = {
         if (!data.length) return [];
 
         const stats = [];
+        const cutoffCurrent = Utils.getDaysAgo(period);
+        const cutoffPrevious = Utils.getDaysAgo(period * 2);
 
         for (const col of this.pypiColumns) {
             if (!this.selectedPypi.has(col)) continue;
 
             const values = Utils.getColumnValues(data, col);
-            const current = Utils.getLatestValue(data, col);
-            const previous = Utils.getPreviousValue(data, col, period);
-            const change = Utils.calculateChange(current, previous);
-            const trend = Utils.getTrend(data, col, period);
+            
+            const currentPeriodSum = this.sumColumnInRange(data, col, cutoffCurrent, null);
+            const previousPeriodSum = this.sumColumnInRange(data, col, cutoffPrevious, cutoffCurrent);
+            
+            const change = Utils.calculateChange(currentPeriodSum, previousPeriodSum);
+            const trend = Utils.getPypiTrend(data, col, period);
 
             stats.push({
                 name: col,
-                current,
+                current: currentPeriodSum,
                 change: change.abs,
                 percent: change.percent,
                 streak: trend,
@@ -161,12 +165,26 @@ const DataStore = {
         return stats.sort((a, b) => (b.current || 0) - (a.current || 0));
     },
 
+    sumColumnInRange(data, col, startDate, endDate) {
+        return data.reduce((sum, row) => {
+            if (startDate && row.date < startDate) return sum;
+            if (endDate && row.date >= endDate) return sum;
+            const val = row[col];
+            return sum + (val !== null && !isNaN(val) ? Number(val) : 0);
+        }, 0);
+    },
+
     getTotalStars() {
         return Utils.sumColumn(this.githubData, [...this.selectedGithub]);
     },
 
-    getTotalDownloads() {
-        return Utils.sumColumn(this.pypiData, [...this.selectedPypi]);
+    getTotalDownloads(period = 30) {
+        const cutoff = Utils.getDaysAgo(period);
+        let total = 0;
+        for (const col of this.selectedPypi) {
+            total += this.sumColumnInRange(this.pypiData, col, cutoff, null);
+        }
+        return total;
     },
 
     getTopGrower(period = 30) {

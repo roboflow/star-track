@@ -221,7 +221,7 @@ const App = {
 
     renderSummary() {
         const totalStars = DataStore.getTotalStars();
-        const totalDownloads = DataStore.getTotalDownloads();
+        const totalDownloads = DataStore.getTotalDownloads(this.currentPeriod);
         const topGrower = DataStore.getTopGrower(this.currentPeriod);
 
         const githubStats = DataStore.getGithubStats(this.currentPeriod);
@@ -234,9 +234,10 @@ const App = {
         document.getElementById('totalStarsChange').textContent = 
             `${Utils.formatChange(starsChange)} in ${this.currentPeriod}D`;
 
+        document.getElementById('downloadsLabel').textContent = `Downloads (${this.currentPeriod}D)`;
         document.getElementById('totalDownloads').textContent = Utils.formatNumber(totalDownloads);
         document.getElementById('totalDownloadsChange').textContent = 
-            `${Utils.formatChange(downloadsChange)} in ${this.currentPeriod}D`;
+            `${Utils.formatChange(downloadsChange)} vs prev ${this.currentPeriod}D`;
 
         document.getElementById('periodLabel').textContent = `(${this.currentPeriod}D)`;
 

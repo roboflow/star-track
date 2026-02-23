@@ -69,7 +69,7 @@ const Report = {
         const changeWidth = 18;
         const totalWidth = nameWidth + dlWidth + changeWidth + 8;
 
-        let section = 'PyPI downloads - measure usage (↑ > 2.5%, ↓ < 2.5%)\n\n';
+        let section = 'PyPI downloads (in period) - measure usage\n\n';
         section += this.padRight('Package', nameWidth) + 
                    this.padLeft('Downloads', dlWidth) + 
                    this.padLeft('Change', changeWidth) + 
