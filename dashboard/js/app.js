@@ -105,9 +105,6 @@ const App = {
             this.selectAllFilters(false);
         });
 
-        document.getElementById('chartMetric').addEventListener('change', (e) => {
-            Charts.updateTrendChart(e.target.value, this.currentPeriod);
-        });
 
         document.querySelectorAll('#starsTable th[data-sort]').forEach(th => {
             th.addEventListener('click', () => this.handleSort('stars', th.dataset.sort));
@@ -123,7 +120,12 @@ const App = {
 
         document.getElementById('chartPeriod').addEventListener('change', (e) => {
             Charts.setChartPeriod(parseInt(e.target.value));
-            Charts.updateTrendChart(document.getElementById('chartMetric').value, this.currentPeriod);
+            Charts.updateTrendChart('stars', this.currentPeriod);
+        });
+
+        document.getElementById('chartGranularity').addEventListener('change', (e) => {
+            Charts.setChartGranularity(e.target.value);
+            Charts.updateTrendChart('stars', this.currentPeriod);
         });
 
         document.getElementById('selectChartItems').addEventListener('click', () => {
@@ -138,7 +140,7 @@ const App = {
 
         document.getElementById('applyChartItems').addEventListener('click', () => {
             Charts.setSelectedItems(this.chartSelectedItems);
-            Charts.updateTrendChart(document.getElementById('chartMetric').value, this.currentPeriod, 
+            Charts.updateTrendChart('stars', this.currentPeriod, 
                 this.chartSelectedItems.length > 0 ? this.chartSelectedItems : null);
             this.hideModal('chartItemsModal');
         });
@@ -216,7 +218,7 @@ const App = {
         this.renderSummary();
         this.renderStarsTable();
         this.renderDownloadsTable();
-        Charts.updateTrendChart(document.getElementById('chartMetric').value, this.currentPeriod);
+        Charts.updateTrendChart('stars', this.currentPeriod);
     },
 
     renderSummary() {
@@ -436,11 +438,8 @@ const App = {
     },
 
     showChartItemsModal() {
-        const type = document.getElementById('chartMetric').value;
-        const columns = type === 'stars' ? DataStore.githubColumns : DataStore.pypiColumns;
-        const stats = type === 'stars' ? 
-            DataStore.getGithubStats(this.currentPeriod) : 
-            DataStore.getPypiStats(this.currentPeriod);
+        const columns = DataStore.githubColumns;
+        const stats = DataStore.getGithubStats(this.currentPeriod);
         const statsMap = new Map(stats.map(s => [s.name, s]));
 
         if (this.chartSelectedItems.length === 0) {

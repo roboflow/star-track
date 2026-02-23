@@ -110,15 +110,17 @@
                         </div>
                         <div class="chart-header-row">
                             <div class="chart-controls">
-                                <select id="chartMetric">
-                                    <option value="stars">GitHub Stars</option>
-                                    <option value="downloads">PyPI Downloads</option>
-                                </select>
                                 <select id="chartPeriod">
                                     <option value="7">Last 7 days</option>
                                     <option value="30" selected>Last 30 days</option>
                                     <option value="90">Last 90 days</option>
+                                    <option value="365">Last year</option>
                                     <option value="0">All time</option>
+                                </select>
+                                <select id="chartGranularity">
+                                    <option value="day">Daily</option>
+                                    <option value="week" selected>Weekly</option>
+                                    <option value="month">Monthly</option>
                                 </select>
                                 <button class="btn-secondary btn-sm" id="selectChartItems">Select Items</button>
                             </div>
@@ -249,10 +251,10 @@
         </div>
     </div>
 
-    <script src="js/utils.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/charts.js"></script>
-    <script src="js/report.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/utils.js?v=3"></script>
+    <script src="js/data.js?v=3"></script>
+    <script src="js/charts.js?v=3"></script>
+    <script src="js/report.js?v=3"></script>
+    <script src="js/app.js?v=3"></script>
 </body>
 </html>

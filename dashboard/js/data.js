@@ -296,7 +296,7 @@ const DataStore = {
         return type === 'stars' ? this.githubColumns : this.pypiColumns;
     },
 
-    getStackedGrowthData(type = 'stars', items = null, chartPeriod = 30) {
+    getStackedGrowthData(type = 'stars', items = null, chartPeriod = 30, granularity = 'week') {
         const data = type === 'stars' ? this.githubData : this.pypiData;
         let columns = items;
         
@@ -310,15 +310,6 @@ const DataStore = {
 
         const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
         if (sorted.length < 2) return { labels: [], datasets: [], selectedItems: columns };
-
-        let granularity;
-        if (chartPeriod <= 7) {
-            granularity = 'day';
-        } else if (chartPeriod <= 30) {
-            granularity = 'week';
-        } else {
-            granularity = 'month';
-        }
 
         const buckets = this.aggregateByGranularity(sorted, granularity, chartPeriod);
         

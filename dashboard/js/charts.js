@@ -3,6 +3,7 @@ const Charts = {
     selectedItems: [],
     currentType: 'stars',
     chartPeriod: 30,
+    chartGranularity: 'week',
     colors: {
         blue: '#007AFF',
         green: '#34C759',
@@ -111,38 +112,40 @@ const Charts = {
 
         this.currentType = type;
         const items = customItems || (this.selectedItems.length > 0 ? this.selectedItems : null);
-        const chartData = DataStore.getStackedGrowthData(type, items, this.chartPeriod);
+        const chartData = DataStore.getStackedGrowthData(type, items, this.chartPeriod, this.chartGranularity);
         this.selectedItems = chartData.selectedItems || [];
 
         this.trendChart.data = chartData;
         this.trendChart.update('none');
         
-        this.renderLegend(chartData.datasets, type);
-        this.updateChartTitle(type);
+        this.renderLegend(chartData.datasets);
+        this.updateChartTitle();
     },
 
     setChartPeriod(days) {
         this.chartPeriod = days;
     },
 
+    setChartGranularity(granularity) {
+        this.chartGranularity = granularity;
+    },
+
     setSelectedItems(items) {
         this.selectedItems = items;
     },
 
-    updateChartTitle(type) {
+    updateChartTitle() {
         const title = document.getElementById('chartTitle');
         if (title) {
-            const label = type === 'stars' ? 'star' : 'download';
-            let granularity = 'monthly';
-            if (this.chartPeriod <= 7) granularity = 'daily';
-            else if (this.chartPeriod <= 30) granularity = 'weekly';
+            const granularityLabel = this.chartGranularity === 'day' ? 'daily' : 
+                                     this.chartGranularity === 'week' ? 'weekly' : 'monthly';
             
             const periodLabel = this.chartPeriod ? `last ${this.chartPeriod} days` : 'all time';
-            title.textContent = `${label.charAt(0).toUpperCase() + label.slice(1)} growth (${granularity}) · ${periodLabel}`;
+            title.textContent = `Star growth (${granularityLabel}) · ${periodLabel}`;
         }
     },
 
-    renderLegend(datasets, type) {
+    renderLegend(datasets) {
         const container = document.getElementById('chartLegend');
         if (!container) return;
         
